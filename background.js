@@ -1,5 +1,8 @@
 // Handle Spotify authentication and background tasks
-const REDIRECT_URI = chrome.identity.getRedirectURL();
+// const REDIRECT_URI = chrome.identity.getRedirectURL();
+const REDIRECT_URI =
+  'https://hkjmddjpkjmmnhapealcokhehnoeoogk.chromiumapp.org/';
+// const REDIRECT_URI = 'http://localhost:3000';
 const SCOPES = ['user-read-currently-playing'];
 const SERVER_URL = 'http://localhost:3000';
 

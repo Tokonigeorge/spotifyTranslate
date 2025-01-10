@@ -14,7 +14,7 @@ app.use(express.json());
 // Endpoint to initiate Spotify auth
 app.get('/auth/spotify', (req, res) => {
   const { redirect_uri, state } = req.query;
-
+  console.log(redirect_uri, state, 'wahala');
   if (!process.env.SPOTIFY_CLIENT_ID) {
     console.error('SPOTIFY_CLIENT_ID is not set in environment variables');
     return res.status(500).json({ error: 'Server configuration error' });

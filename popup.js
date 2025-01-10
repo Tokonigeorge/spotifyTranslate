@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         chrome.runtime.sendMessage({ type: 'getToken' }, async (response) => {
           if (response.token) {
             showAuthenticatedState();
+            navigateToSpotifyTab();
           } else {
             console.error('Failed to authenticate with Spotify');
           }
@@ -31,4 +32,19 @@ function showAuthenticatedState() {
     <h3>Connected!</h3>
     <p>You're now connected to Spotify. Play a song to see its lyrics and translations.</p>
   `;
+}
+
+async function navigateToSpotifyTab() {
+  const tabs = await chrome.tabs.query({
+    url: 'https://open.spotify.com/*',
+  });
+
+  if (tabs.length > 0) {
+    // If a Spotify tab exists, switch to it
+    await chrome.tabs.update(tabs[0].id, { active: true });
+    await chrome.windows.update(tabs[0].windowId, { focused: true });
+  } else {
+    // If no Spotify tab exists, create one
+    await chrome.tabs.create({ url: 'https://open.spotify.com' });
+  }
 }
