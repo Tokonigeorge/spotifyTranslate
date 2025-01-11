@@ -52,7 +52,8 @@ hr {
   /* text-align: left; */
 }
 
-#main-text button {
+#main-text button,
+.error-container button {
   background-color: #1c1c1c;
   border-radius: 10px;
   padding: 10px 12px;
@@ -61,6 +62,19 @@ hr {
   font-family: 'Montserrat', sans-serif;
   box-shadow: rgba(0, 0, 0, 0.4) 0 2px 10px;
   cursor: pointer;
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.error-container p {
+  margin-top: 0px;
+  font-size: 12px;
+  /* text-align: left; */
 }
 
 /* #current-track {
