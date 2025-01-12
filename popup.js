@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const noTrackView = document.getElementById('no-track-view');
   const languageSelect = document.getElementById('language');
   const checkTrackButton = document.querySelector('.check-track-button');
-  let currentToken = null;
 
   function showError() {
     errorContainer.style.display = 'flex';
@@ -39,10 +38,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function updateTrackDisplay(track) {
     if (track) {
-      document.getElementById('track-name').textContent = track.name;
-      document.getElementById(
-        'track-artists'
-      ).textContent = `by ${track.artists.join(', ')}`;
+      document.getElementById('track').textContent =
+        track.name + `by ${track.artists.join(', ')}`;
+      // document.getElementById(
+      //   'track-artists'
+      // ).textContent = ;
 
       trackInfo.style.display = 'block';
       noTrackView.style.display = 'none';
@@ -52,64 +52,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Listen for track changes from background script
-  chrome.runtime.onMessage.addListener((message) => {
-    if (message.type === 'trackChanged') {
-      updateTrackDisplay(message.track);
-    }
-  });
-
-  // async function checkCurrentTrack() {
-  //   const track = await getCurrentTrack(currentToken);
-
-  //   if (track && track.item) {
-  //     document.getElementById('track-name').textContent = track.item.name;
-  //     document.getElementById(
-  //       'track-artists'
-  //     ).textContent = `by ${track.item.artists
-  //       .map((artist) => artist.name)
-  //       .join(', ')}`;
-
-  //     trackInfo.style.display = 'block';
-  //     noTrackView.style.display = 'none';
-  //   } else {
-  //     trackInfo.style.display = 'none';
-  //     noTrackView.style.display = 'block';
-  //   }
-  // }
-
   async function handleAuthenticated() {
     mainTextContainer.style.display = 'none';
     playerView.style.display = 'block';
     populateLanguages();
 
     const { currentTrack } = await chrome.storage.local.get('currentTrack');
-    if (currentTrack) {
-      updateTrackDisplay(currentTrack);
-    }
+
+    updateTrackDisplay(currentTrack);
 
     await navigateToSpotifyTab();
-
-    // await navigateToSpotifyTab().then(async () => {
-    //   await checkCurrentTrack();
-    // });
-    // Add a small delay to ensure Spotify has loaded
-    // setTimeout(, 1000);
   }
 
   // Check authentication status
   chrome.runtime.sendMessage({ type: 'checkAuth' }, async (response) => {
     if (response.isAuthenticated) {
-      // Already authenticated, update UI accordingly
-      // showAuthenticatedState();
-      // navigateToSpotifyTab();
       await handleAuthenticated();
-      // chrome.runtime.sendMessage({ type: 'getToken' }, async (response) => {
-      //   if (response.token) {
-      //     console.log(response.token, 'yayy');
-      //     await handleAuthenticated();
-      //   }
-      // });
     } else {
       const handleAuth = async () => {
         chrome.runtime.sendMessage({ type: 'getToken' }, async (response) => {
@@ -122,35 +80,34 @@ document.addEventListener('DOMContentLoaded', async () => {
       };
 
       connectButton.addEventListener('click', handleAuth);
-      retryButton.addEventListener('click', () => {
-        // hideError();
-        handleAuth();
-      });
+      retryButton.addEventListener('click', handleAuth);
     }
   });
-
   checkTrackButton.addEventListener('click', () => {
+    console.log('here');
     chrome.runtime.sendMessage({ type: 'getCurrentTrack' }, (response) => {
-      if (response.track && response.track.item) {
-        updateTrackDisplay({
-          name: response.track.item.name,
-          artists: response.track.item.artists.map((artist) => artist.name),
-          id: response.track.item.id,
-        });
-      }
+      updateTrackDisplay(response.track);
     });
   });
 });
 
-function showAuthenticatedState() {
-  const mainText = document.getElementById('main-text');
-  mainText.innerHTML = `
-    <h3>Connected!</h3>
-    <p>You're now connected to Spotify. Play a song to see its lyrics and translations.</p>
-  `;
-}
-
 async function navigateToSpotifyTab() {
+  // Get the currently active tab in the focused window
+  const [activeTab] = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+
+  if (
+    activeTab &&
+    activeTab.url &&
+    activeTab.url.startsWith('https://open.spotify.com/')
+  ) {
+    console.log('Already on a Spotify tab. Doing nothing.');
+    return;
+  }
+
+  // Search for an existing Spotify tab
   const tabs = await chrome.tabs.query({
     url: 'https://open.spotify.com/*',
   });

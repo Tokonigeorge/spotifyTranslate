@@ -15,7 +15,7 @@
         <h2>SpotifyTranslate</h2>
         <hr />
       </div>
-      <div id="main-container">
+      <div id="main-container" style="display: none">
         <div id="main-text">
           <h3>Sing Along!</h3>
           <p>
@@ -27,21 +27,28 @@
       </div>
     </div>
 
-    <div id="player-view" style="display: none">
-      <div id="track-info">
+    <div id="player-view">
+      <div id="track-info" style="display: none">
         <div class="language-selector">
           <label for="language">Translate to:</label>
-          <select id="language"></select>
+          <select id="language">
+            <option>English</option>
+          </select>
         </div>
-        <h3 id="track-name"></h3>
-        <p id="track-artists"></p>
+        <div id="track-display">
+          <h3 id="track">Train Wreck by James Arthur</h3>
 
-        <button class="translate-button">Translate Lyrics</button>
+          <div id="lyrics-container">
+            <p>I saw you dancing</p>
+          </div>
+        </div>
+        <!-- 
+        <button class="translate-button">Translate Lyrics</button> -->
       </div>
 
       <div id="no-track-view" style="display: none">
         <h3>Nothing Playing</h3>
-        <p>Play a song on Spotify to see its lyrics and translations</p>
+        <p>Play a song on Spotify to see its lyrics and translations.</p>
         <button class="check-track-button">Check Now</button>
       </div>
     </div>

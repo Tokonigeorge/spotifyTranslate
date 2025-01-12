@@ -25,35 +25,40 @@ body {
 .extension-name h2 {
   font-size: 12px;
   font-weight: 600;
-  padding-left: 10px;
+  padding-left: 16px;
 }
 
 hr {
   background-color: red;
 }
 
-#main-container {
+#main-container,
+#player-view {
   padding: 0 16px;
 }
 
-#main-text {
+#main-text,
+#no-track-view {
   text-align: center;
 }
 
-#main-text h3 {
+#main-text h3,
+#no-track-view h3 {
   font-size: 24px;
   line-height: 20px;
   /* text-align: center; */
 }
 
-#main-text p {
+#main-text p,
+#no-track-view p {
   margin-top: -16px;
   font-size: 12px;
   /* text-align: left; */
 }
 
 #main-text button,
-.error-container button {
+.error-container button,
+#no-track-view button {
   background-color: #1c1c1c;
   border-radius: 10px;
   padding: 10px 12px;
@@ -75,6 +80,48 @@ hr {
   margin-top: 0px;
   font-size: 12px;
   /* text-align: left; */
+}
+
+#track-info label {
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.language-selector {
+  display: flex;
+  flex-direction: column;
+}
+
+#language {
+  border: 1px solid rgba(130, 71, 233, 0.5);
+  background-color: rgba(130, 71, 233, 0.15);
+  outline: none;
+  width: 120px;
+  padding: 4px;
+  margin-top: 8px;
+  border-radius: 4px;
+}
+
+#track-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 16px;
+}
+
+#track-display h3 {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+#lyrics-container {
+  width: 80%;
+  margin: auto;
+  border: 1px solid black;
+  padding: 0 12px;
+  box-shadow: rgba(0, 0, 0, 0.4) 0 4px 4px;
+  margin-bottom: 12px;
 }
 
 /* #current-track {
