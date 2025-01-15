@@ -55,6 +55,13 @@ async function checkCurrentTrack() {
         artists: currentTrack.item?.artists?.map((artist) => artist.name),
         id: currentTrack.item?.id,
       };
+      const lyricsInfo = await searchLyrics(
+        trackInfo.name,
+        trackInfo.artists[0]
+      );
+      if (lyricsInfo) {
+        trackInfo.genius = lyricsInfo;
+      }
       await chrome.storage.local.set({ currentTrack: trackInfo });
       return trackInfo;
     } else {
@@ -63,6 +70,23 @@ async function checkCurrentTrack() {
     }
   } catch (error) {
     console.error('Error checking current track:', error);
+    return null;
+  }
+}
+
+async function searchLyrics(track, artist) {
+  try {
+    const response = await fetch(
+      `${SERVER_URL}/api/lyrics/search?track=${encodeURIComponent(
+        track
+      )}&artist=${encodeURIComponent(artist)}`
+    );
+
+    if (!response.ok) return null;
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error searching lyrics:', error);
     return null;
   }
 }

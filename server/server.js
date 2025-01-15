@@ -27,6 +27,38 @@ app.get('/auth/spotify', (req, res) => {
   res.redirect(authUrl);
 });
 
+// Endpoint to search for lyrics
+app.get('/api/lyrics/search', async (req, res) => {
+  const { track, artist } = req.query;
+
+  if (!process.env.GENIUS_ACCESS_TOKEN) {
+    return res.status(500).json({ error: 'Genius API token not configured' });
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.genius.com/search?q=${encodeURIComponent(
+        `${track} ${artist}`
+      )}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.GENIUS_ACCESS_TOKEN}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch from Genius API');
+    }
+
+    const data = await response.json();
+    res.json(data.response.hits[0]?.result || null);
+  } catch (error) {
+    console.error('Error fetching lyrics:', error);
+    res.status(500).json({ error: 'Failed to fetch lyrics' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
