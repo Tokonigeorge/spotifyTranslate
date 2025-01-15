@@ -39,11 +39,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   function updateTrackDisplay(track) {
     if (track) {
       document.getElementById('track').textContent =
-        track.name + `by ${track.artists.join(', ')}`;
+        track.name + ` by ${track.artists.join(', ')}`;
       // document.getElementById(
       //   'track-artists'
       // ).textContent = ;
-
+      const lyricsContainer = document.getElementById('lyrics-container');
+      if (track.lyrics && track.lyrics.length > 0) {
+        lyricsContainer.innerHTML = track.lyrics
+          .map((line) => `<p class="lyrics-line">${line || '&nbsp;'}</p>`)
+          .join('');
+      } else {
+        lyricsContainer.innerHTML =
+          '<p>No lyrics available for this track.</p>';
+      }
       trackInfo.style.display = 'block';
       noTrackView.style.display = 'none';
     } else {
@@ -53,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function handleAuthenticated() {
+    errorContainer.style.display = 'none';
     mainTextContainer.style.display = 'none';
     playerView.style.display = 'block';
     populateLanguages();

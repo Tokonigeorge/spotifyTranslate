@@ -36,7 +36,7 @@ app.get('/api/lyrics/search', async (req, res) => {
   }
 
   try {
-    const response = await fetch(
+    const searchResponse = await fetch(
       `https://api.genius.com/search?q=${encodeURIComponent(
         `${track} ${artist}`
       )}`,
@@ -46,13 +46,49 @@ app.get('/api/lyrics/search', async (req, res) => {
         },
       }
     );
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch from Genius API');
+    if (!searchResponse.ok) {
+      throw new Error('Failed to search song');
     }
 
-    const data = await response.json();
-    res.json(data.response.hits[0]?.result || null);
+    const searchData = await searchResponse.json();
+    const hit = searchData.response.hits[0]?.result;
+
+    if (!hit) {
+      return res.json(null);
+    }
+    // Fetch and scrape lyrics from the Genius page
+    const lyricsResponse = await fetch(hit.url);
+    const html = await lyricsResponse.text();
+    console.log('html', html.toString());
+
+    // Extract lyrics from the HTML using regex
+    const lyricsMatch = html.match(
+      /<div[^>]*data-lyrics-container="true"[^>]*>([^<]*(?:<(?!\/div)[^<]*)*)<\/div>/g
+    );
+    console.log('lyricsmatch', lyricsMatch);
+    const lyrics = lyricsMatch
+      ? lyricsMatch
+          .map((container) => {
+            // Remove HTML tags but keep line breaks
+            return container
+              .replace(/<br\/?>/gi, '\n') // Replace <br> tags with newlines
+              .replace(/<[^>]+>/g, '') // Remove all other HTML tags
+              .trim();
+          })
+          .join('\n')
+          .split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0) // Remove empty lines
+      : null;
+
+    res.json({
+      id: hit.id,
+      title: hit.title,
+      artist: hit.primary_artist.name,
+      url: hit.url,
+      lyrics: lyrics,
+      album_art: hit.song_art_image_url,
+    });
   } catch (error) {
     console.error('Error fetching lyrics:', error);
     res.status(500).json({ error: 'Failed to fetch lyrics' });
