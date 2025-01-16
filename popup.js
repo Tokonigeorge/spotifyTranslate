@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           .join('');
       } else {
         lyricsContainer.innerHTML =
-          '<p>No lyrics available for this track.</p>';
+          '<p>You got me, no lyrics available for this track.</p>';
       }
       trackInfo.style.display = 'block';
       noTrackView.style.display = 'none';

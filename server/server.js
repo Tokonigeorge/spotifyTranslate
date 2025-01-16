@@ -59,13 +59,12 @@ app.get('/api/lyrics/search', async (req, res) => {
     // Fetch and scrape lyrics from the Genius page
     const lyricsResponse = await fetch(hit.url);
     const html = await lyricsResponse.text();
-    console.log('html', html.toString());
 
     // Extract lyrics from the HTML using regex
     const lyricsMatch = html.match(
       /<div[^>]*data-lyrics-container="true"[^>]*>([^<]*(?:<(?!\/div)[^<]*)*)<\/div>/g
     );
-    console.log('lyricsmatch', lyricsMatch);
+
     const lyrics = lyricsMatch
       ? lyricsMatch
           .map((container) => {
