@@ -3,6 +3,31 @@
 
 // import { fetchLyrics } from './src/services/lyrics';
 
+export async function translateText(text, targetLanguage) {
+  try {
+    const response = await fetch(`${SERVER_URL}/api/translate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        targetLanguage,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Translation failed');
+    }
+
+    const data = await response.json();
+    return data.translatedText;
+  } catch (error) {
+    console.error('Translation error:', error);
+    return null;
+  }
+}
+
 async function fetchLyrics(trackName, artistName) {
   try {
     const response = await fetch(
@@ -15,22 +40,6 @@ async function fetchLyrics(trackName, artistName) {
 
     const data = await response.json();
     if (!data || !data.lyrics) return null;
-
-    // // Now fetch the lyrics page and scrape it
-    // const lyricsResponse = await fetch(data.url);
-    // const html = await lyricsResponse.text();
-
-    // // Extract lyrics from the HTML using regex
-    // const lyricsMatch = html.match(
-    //   /<div class="Lyrics-sc-[^>]+>([^<]+)<\/div>/g
-    // );
-    // const lyrics = lyricsMatch
-    //   ? lyricsMatch
-    //       .map((line) => line.replace(/<[^>]+>/g, ''))
-    //       .join('\n')
-    //       .trim()
-    //       .split('\n')
-    //   : null;
 
     return {
       lyrics: data.lyrics,
@@ -93,7 +102,7 @@ async function checkCurrentTrack() {
 
     const currentTrack = await response.json();
     if (!currentTrack || !currentTrack.item) return null;
-    console.log('currenttrack', response);
+
     if (currentTrack) {
       const trackInfo = {
         name: currentTrack.item?.name,
@@ -122,23 +131,6 @@ async function checkCurrentTrack() {
     return null;
   }
 }
-
-// async function fetchLyrics(track, artist) {
-//   try {
-//     const response = await fetch(
-//       `${SERVER_URL}/api/lyrics/search?track=${encodeURIComponent(
-//         track
-//       )}&artist=${encodeURIComponent(artist)}`
-//     );
-
-//     if (!response.ok) return null;
-
-//     return await response.json();
-//   } catch (error) {
-//     console.error('Error searching lyrics:', error);
-//     return null;
-//   }
-// }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'getToken') {

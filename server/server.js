@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import { TranslationServiceClient } from '@google-cloud/translate';
 
 dotenv.config();
 
@@ -11,10 +12,44 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Initialize Google Cloud Translation client
+const translationClient = new TranslationServiceClient({
+  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+  credentials: JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS),
+});
+// Endpoint to translate text using LibreTranslate
+app.post('/api/translate', async (req, res) => {
+  const { text, targetLanguage } = req.body;
+
+  if (!text || !targetLanguage) {
+    return res.status(400).json({ error: 'Missing required parameters' });
+  }
+
+  try {
+    const request = {
+      parent: `projects/${process.env.GOOGLE_CLOUD_PROJECT_ID}/locations/global`,
+      contents: Array.isArray(text) ? text : [text],
+      mimeType: 'text/plain',
+      sourceLanguageCode: 'en',
+      targetLanguageCode: targetLanguage,
+    };
+
+    const [response] = await translationClient.translateText(request);
+    const translations = response.translations.map((t) => t.translatedText);
+
+    res.json({
+      translatedText: Array.isArray(text) ? translations : translations[0],
+    });
+  } catch (error) {
+    console.error('Translation error:', error);
+    res.status(500).json({ error: 'Translation failed' });
+  }
+});
+
 // Endpoint to initiate Spotify auth
 app.get('/auth/spotify', (req, res) => {
   const { redirect_uri, state } = req.query;
-  console.log(redirect_uri, state, 'wahala');
+
   if (!process.env.SPOTIFY_CLIENT_ID) {
     console.error('SPOTIFY_CLIENT_ID is not set in environment variables');
     return res.status(500).json({ error: 'Server configuration error' });
@@ -23,7 +58,6 @@ app.get('/auth/spotify', (req, res) => {
   const scope = 'user-read-currently-playing';
   const authUrl = `https://accounts.spotify.com/authorize?client_id=${process.env.SPOTIFY_CLIENT_ID}&response_type=token&redirect_uri=${redirect_uri}&scope=${scope}&state=${state}`;
 
-  console.log('Redirecting to:', authUrl); // Debug log
   res.redirect(authUrl);
 });
 

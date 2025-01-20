@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const languageSelect = document.getElementById('language');
   const checkTrackButton = document.querySelector('.check-track-button');
 
+  // let selectedLanguage = 'en';
+  let currentTrackData = null;
+
   function showError() {
     errorContainer.style.display = 'flex';
     mainTextContainer.style.display = 'none';
@@ -36,7 +39,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  function updateTrackDisplay(track) {
+  async function updateTrackDisplay(track, selectedLanguage) {
+    currentTrackData = track;
     if (track) {
       document.getElementById('track').textContent =
         track.name + ` by ${track.artists.join(', ')}`;
@@ -44,10 +48,47 @@ document.addEventListener('DOMContentLoaded', async () => {
       //   'track-artists'
       // ).textContent = ;
       const lyricsContainer = document.getElementById('lyrics-container');
+      const translatedLyricsContainer = document.getElementById(
+        'translated-lyrics-container'
+      );
+
       if (track.lyrics && track.lyrics.length > 0) {
-        lyricsContainer.innerHTML = track.lyrics
-          .map((line) => `<p class="lyrics-line">${line || '&nbsp;'}</p>`)
-          .join('');
+        if (selectedLanguage && selectedLanguage !== 'en') {
+          lyricsContainer.innerHTML = 'Loading translations...';
+          const translatedLyrics = await translateText(
+            track.lyrics,
+            selectedLanguage
+          );
+
+          // Combine original and translated lyrics in alternating pattern
+          const combinedLyrics = track.lyrics
+            .map(
+              (line, index) => `
+            <div class="lyrics-pair">
+                <p class="lyrics-line">${line || '&nbsp;'}</p>
+                <p class="translated-lyrics-line">${
+                  translatedLyrics[index] || '&nbsp;'
+                }</p>
+            </div>
+            `
+            )
+            .join('');
+
+          lyricsContainer.innerHTML = combinedLyrics;
+        } else {
+          // If no translation is requested, just show original lyrics
+          const originalLyrics = track.lyrics
+            .map(
+              (line) => `
+            <div class="lyrics-pair">
+                <p class="lyrics-line">${line || '&nbsp;'}</p>
+            </div>
+            `
+            )
+            .join('');
+
+          lyricsContainer.innerHTML = originalLyrics;
+        }
       } else {
         lyricsContainer.innerHTML =
           '<p>You got me, no lyrics available for this track.</p>';
@@ -67,11 +108,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     populateLanguages();
 
     const { currentTrack } = await chrome.storage.local.get('currentTrack');
-
-    updateTrackDisplay(currentTrack);
+    const selectedLanguage = languageSelect.value;
+    updateTrackDisplay(currentTrack, selectedLanguage);
 
     await navigateToSpotifyTab();
   }
+
+  // Language selection change handler
+  languageSelect.addEventListener('change', async (e) => {
+    if (currentTrackData) {
+      // selectedLanguage = e.target.value;
+      console.log(e.target.value, 'selected');
+      await updateTrackDisplay(currentTrackData, e.target.value);
+    }
+  });
 
   // Check authentication status
   chrome.runtime.sendMessage({ type: 'checkAuth' }, async (response) => {
