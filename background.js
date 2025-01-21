@@ -114,7 +114,7 @@ async function checkCurrentTrack() {
         trackInfo.name,
         trackInfo.artists[0]
       );
-      console.log('lyricsinfo', lyricsInfo);
+
       if (lyricsInfo) {
         trackInfo.lyrics = lyricsInfo.lyrics;
         trackInfo.lyricsUrl = lyricsInfo.url;
@@ -133,6 +133,10 @@ async function checkCurrentTrack() {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'lyricsUpdate') {
+    // Store lyrics in chrome.storage.local
+    chrome.storage.local.set({ currentLyrics: message.lyrics });
+  }
   if (request.type === 'getToken') {
     getAuthToken().then((token) => {
       sendResponse({ token });

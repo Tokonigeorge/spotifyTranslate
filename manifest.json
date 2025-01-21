@@ -4,7 +4,11 @@
   "version": "1.0.0",
   "description": "Translates lyrics of currently playing Spotify tracks into multiple languages",
   "permissions": ["identity", "storage", "activeTab", "tabs", "scripting"],
-  "host_permissions": ["https://api.spotify.com/*", "http://localhost:3000/*"],
+  "host_permissions": [
+    "https://api.spotify.com/*",
+    "http://localhost:3000/*",
+    "https://open.spotify.com/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -13,6 +17,13 @@
       "32": "assets/ext-icon.png"
     }
   },
+  "content_scripts": [
+    {
+      "js": ["content.js"],
+      "matches": ["https://open.spotify.com/*"],
+      "run_at": "document_idle"
+    }
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"

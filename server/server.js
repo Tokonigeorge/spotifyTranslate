@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
-import { TranslationServiceClient } from '@google-cloud/translate';
+import puppeteer from 'puppeteer';
 
 dotenv.config();
 
@@ -12,12 +12,10 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Initialize Google Cloud Translation client
-const translationClient = new TranslationServiceClient({
-  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-  credentials: JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS),
-});
-// Endpoint to translate text using LibreTranslate
+const TRANSLATION_API =
+  'https://translate.googleapis.com/translate_a/single?client=gtx&dt=t';
+
+// Endpoint to translate text
 app.post('/api/translate', async (req, res) => {
   const { text, targetLanguage } = req.body;
 
@@ -26,19 +24,41 @@ app.post('/api/translate', async (req, res) => {
   }
 
   try {
-    const request = {
-      parent: `projects/${process.env.GOOGLE_CLOUD_PROJECT_ID}/locations/global`,
-      contents: Array.isArray(text) ? text : [text],
-      mimeType: 'text/plain',
-      sourceLanguageCode: 'en',
-      targetLanguageCode: targetLanguage,
-    };
+    const textArray = Array.isArray(text) ? text : [text];
+    const combinedText = textArray.join('\n');
 
-    const [response] = await translationClient.translateText(request);
-    const translations = response.translations.map((t) => t.translatedText);
+    const response = await fetch(
+      `${TRANSLATION_API}&sl=auto&tl=${targetLanguage}&q=${encodeURIComponent(
+        combinedText
+      )}`
+    );
+    if (!response.ok) {
+      throw new Error(`Translation failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    // // Split the response back into lines
+    const translatedTexts = data[0] || [];
+
+    // console.log(translatedTexts, 'translatedLyrics');
+    // let translatedLyrics = '';
+    // translatedTexts.forEach((translation) => {
+    //   translatedLyrics += translation[0];
+    // });
+    const cleanedTranslatedTexts = translatedTexts.map((translation) => {
+      // Ensure translation is valid
+      if (Array.isArray(translation) && translation[0]) {
+        return translation[0].trim();
+      }
+      return '';
+    });
+    // .filter(Boolean); // Remove empty strings
+
+    // Join the valid translations into a single string for easier UI rendering
+    // const translatedLyrics = cleanedTranslatedTexts.join('\n');
 
     res.json({
-      translatedText: Array.isArray(text) ? translations : translations[0],
+      translatedText: cleanedTranslatedTexts,
     });
   } catch (error) {
     console.error('Translation error:', error);

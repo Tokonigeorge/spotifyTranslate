@@ -1,3 +1,5 @@
+'use strict';
+
 import { getCurrentTrack } from './src/services/spotify.js';
 import { fetchLyrics } from './src/services/lyrics.js';
 import { translateText } from './src/services/translation.js';
@@ -38,6 +40,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       languageSelect.appendChild(option);
     });
   }
+  function getLyrics() {
+    const lyricsList = [];
+    if (lyricsWrapperList) {
+      lyricsWrapperList.forEach((lyricsWrapper) => {
+        const lyrics = lyricsWrapper.firstChild.textContent;
+        lyricsList.push(lyrics);
+      });
+    }
+    return lyricsList;
+  }
 
   async function updateTrackDisplay(track, selectedLanguage) {
     currentTrackData = track;
@@ -59,10 +71,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             track.lyrics,
             selectedLanguage
           );
-
+          console.log(translatedLyrics, 'translation');
           // Combine original and translated lyrics in alternating pattern
           const combinedLyrics = track.lyrics
-            .map(
+            ?.map(
               (line, index) => `
             <div class="lyrics-pair">
                 <p class="lyrics-line">${line || '&nbsp;'}</p>
@@ -123,6 +135,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  const { currentLyrics } = await chrome.storage.local.get('currentLyrics');
+  if (currentLyrics) {
+    const lyricsHtml = currentLyrics
+      .map(
+        (line) => `
+      <div class="lyrics-pair">
+        <p class="lyrics-line">${line || '&nbsp;'}</p>
+      </div>`
+      )
+      .join('');
+
+    lyricsContainer.innerHTML = lyricsHtml;
+  }
+
   // Check authentication status
   chrome.runtime.sendMessage({ type: 'checkAuth' }, async (response) => {
     if (response.isAuthenticated) {
@@ -179,4 +205,5 @@ async function navigateToSpotifyTab() {
     // If no Spotify tab exists, create one
     await chrome.tabs.create({ url: 'https://open.spotify.com' });
   }
+  // chrome.tabs.executeScript({ file: 'popup.js' });
 }
