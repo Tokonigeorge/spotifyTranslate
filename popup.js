@@ -1,180 +1,87 @@
 'use strict';
-
-import { getCurrentTrack } from './src/services/spotify.js';
-import { fetchLyrics } from './src/services/lyrics.js';
-import { translateText } from './src/services/translation.js';
 import { languages } from './src/services/language.js';
+import { translateText } from './src/services/translation.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const connectButton = document.querySelector('button');
-
-  const mainTextContainer = document.getElementById('main-text');
-  const errorContainer = document.querySelector('.error-container');
-  const retryButton = document.querySelector('.retry-button');
-
-  const authView = document.getElementById('auth-view');
-  const playerView = document.getElementById('player-view');
-  const trackInfo = document.getElementById('track-info');
-  const noTrackView = document.getElementById('no-track-view');
+  console.log('here oo');
   const languageSelect = document.getElementById('language');
-  const checkTrackButton = document.querySelector('.check-track-button');
+  const nowPlaying = document.querySelector(
+    "div[data-testid='now-playing-widget']"
+  );
+  const mainTextContainer = document.getElementById('main-text');
 
-  // let selectedLanguage = 'en';
-  let currentTrackData = null;
+  const { selectedLanguage } = await chrome.storage.local.get(
+    'selectedLanguage'
+  );
+  const lyrics = [];
+  const errorMessage = '';
 
-  function showError() {
-    errorContainer.style.display = 'flex';
-    mainTextContainer.style.display = 'none';
-  }
+  populateLanguages();
 
-  function hideError() {
-    errorContainer.style.display = 'none';
-    mainTextContainer.style.display = 'block';
-  }
+  await navigateToSpotifyTab();
 
-  function populateLanguages() {
-    languages.forEach((lang) => {
-      const option = document.createElement('option');
-      option.value = lang.code;
-      option.textContent = lang.name;
-      languageSelect.appendChild(option);
-    });
-  }
-  function getLyrics() {
-    const lyricsList = [];
-    if (lyricsWrapperList) {
-      lyricsWrapperList.forEach((lyricsWrapper) => {
-        const lyrics = lyricsWrapper.firstChild.textContent;
-        lyricsList.push(lyrics);
-      });
-    }
-    return lyricsList;
-  }
-
-  async function updateTrackDisplay(track, selectedLanguage) {
-    currentTrackData = track;
-    if (track) {
-      document.getElementById('track').textContent =
-        track.name + ` by ${track.artists.join(', ')}`;
-      // document.getElementById(
-      //   'track-artists'
-      // ).textContent = ;
-      const lyricsContainer = document.getElementById('lyrics-container');
-      const translatedLyricsContainer = document.getElementById(
-        'translated-lyrics-container'
-      );
-
-      if (track.lyrics && track.lyrics.length > 0) {
-        if (selectedLanguage && selectedLanguage !== 'en') {
-          lyricsContainer.innerHTML = 'Loading translations...';
-          const translatedLyrics = await translateText(
-            track.lyrics,
-            selectedLanguage
-          );
-          console.log(translatedLyrics, 'translation');
-          // Combine original and translated lyrics in alternating pattern
-          const combinedLyrics = track.lyrics
-            ?.map(
-              (line, index) => `
-            <div class="lyrics-pair">
-                <p class="lyrics-line">${line || '&nbsp;'}</p>
-                <p class="translated-lyrics-line">${
-                  translatedLyrics[index] || '&nbsp;'
-                }</p>
-            </div>
-            `
-            )
-            .join('');
-
-          lyricsContainer.innerHTML = combinedLyrics;
-        } else {
-          // If no translation is requested, just show original lyrics
-          const originalLyrics = track.lyrics
-            .map(
-              (line) => `
-            <div class="lyrics-pair">
-                <p class="lyrics-line">${line || '&nbsp;'}</p>
-            </div>
-            `
-            )
-            .join('');
-
-          lyricsContainer.innerHTML = originalLyrics;
-        }
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'lyricsUpdate') {
+      const lyricsList = message.lyrics;
+      console.log('got lyrics', lyricsList);
+      if (lyricsList?.length > 0) {
+        updateTrackDisplay(selectedLanguage || 'en', lyricsList);
       } else {
-        lyricsContainer.innerHTML =
-          '<p>You got me, no lyrics available for this track.</p>';
+        errorMessage = "Couldn't get lyrics";
       }
-      trackInfo.style.display = 'block';
-      noTrackView.style.display = 'none';
-    } else {
-      trackInfo.style.display = 'none';
-      noTrackView.style.display = 'block';
+
+      console.log('Lyrics received in popup:', lyricsList);
     }
-  }
+  });
 
-  async function handleAuthenticated() {
-    errorContainer.style.display = 'none';
-    mainTextContainer.style.display = 'none';
-    playerView.style.display = 'block';
-    populateLanguages();
-
-    const { currentTrack } = await chrome.storage.local.get('currentTrack');
-    const selectedLanguage = languageSelect.value;
-    updateTrackDisplay(currentTrack, selectedLanguage);
-
-    await navigateToSpotifyTab();
-  }
-
-  // Language selection change handler
   languageSelect.addEventListener('change', async (e) => {
-    if (currentTrackData) {
-      // selectedLanguage = e.target.value;
-      console.log(e.target.value, 'selected');
-      await updateTrackDisplay(currentTrackData, e.target.value);
+    console.log(e.target.value, 'selected');
+    await chrome.storage.local.set({ selectedLanguage });
+    if (lyrics?.length > 0) {
+      await updateTrackDisplay(e.target.value, lyrics);
     }
-  });
-
-  const { currentLyrics } = await chrome.storage.local.get('currentLyrics');
-  if (currentLyrics) {
-    const lyricsHtml = currentLyrics
-      .map(
-        (line) => `
-      <div class="lyrics-pair">
-        <p class="lyrics-line">${line || '&nbsp;'}</p>
-      </div>`
-      )
-      .join('');
-
-    lyricsContainer.innerHTML = lyricsHtml;
-  }
-
-  // Check authentication status
-  chrome.runtime.sendMessage({ type: 'checkAuth' }, async (response) => {
-    if (response.isAuthenticated) {
-      await handleAuthenticated();
-    } else {
-      const handleAuth = async () => {
-        chrome.runtime.sendMessage({ type: 'getToken' }, async (response) => {
-          if (response.token) {
-            await handleAuthenticated();
-          } else {
-            showError();
-          }
-        });
-      };
-
-      connectButton.addEventListener('click', handleAuth);
-      retryButton.addEventListener('click', handleAuth);
-    }
-  });
-  checkTrackButton.addEventListener('click', () => {
-    console.log('here');
-    chrome.runtime.sendMessage({ type: 'getCurrentTrack' }, (response) => {
-      updateTrackDisplay(response.track);
-    });
   });
 });
+
+async function updateTrackDisplay(language, lyrics) {
+  const errorContainer = document.querySelector('.error-container');
+  if (lyrics.length > 0) {
+    const mutatedLyrics = lyrics?.join('\n');
+    const translatedLyrics = await translateText(mutatedLyrics, language);
+
+    if (translatedLyrics?.length > 0) {
+      errorContainer.style.display = 'none';
+
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs.length > 0) {
+          chrome.tabs.sendMessage(tabs[0].id, {
+            type: 'translationLyrics',
+            translatedLyrics: translatedLyrics,
+          });
+        } else {
+          console.error('No active tab found.');
+        }
+      });
+    } else {
+      errorContainer.style.display = 'block';
+    }
+  } else {
+    lyricsContainer.innerHTML =
+      '<p>You got me, no lyrics available for this track.</p>';
+  }
+  // trackInfo.style.display = 'block';
+  // noTrackView.style.display = 'none';
+}
+
+function populateLanguages() {
+  const languageSelect = document.getElementById('language');
+  languages.forEach((lang) => {
+    const option = document.createElement('option');
+    option.value = lang.code;
+    option.textContent = lang.name;
+    languageSelect.appendChild(option);
+  });
+}
 
 async function navigateToSpotifyTab() {
   // Get the currently active tab in the focused window
@@ -205,5 +112,4 @@ async function navigateToSpotifyTab() {
     // If no Spotify tab exists, create one
     await chrome.tabs.create({ url: 'https://open.spotify.com' });
   }
-  // chrome.tabs.executeScript({ file: 'popup.js' });
 }

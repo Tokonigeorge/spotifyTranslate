@@ -133,9 +133,13 @@ async function checkCurrentTrack() {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'lyricsUpdate') {
-    // Store lyrics in chrome.storage.local
-    chrome.storage.local.set({ currentLyrics: message.lyrics });
+  if (request.type === 'lyricSend') {
+    chrome.runtime.sendMessage({
+      type: 'lyricsUpdate',
+      lyrics: request.lyrics,
+    });
+    sendResponse({ success: true });
+    return true;
   }
   if (request.type === 'getToken') {
     getAuthToken().then((token) => {

@@ -16,33 +16,33 @@
         <hr />
       </div>
       <div id="main-container">
-        <div id="main-text">
-          <h3>Sing Along!</h3>
-          <p>
-            Translate Spotify lyrics to your preferred language and enjoy your
-            favorite songs like never before.
-          </p>
-          <button>Connect to Spotify</button>
+        <div class="language-selector">
+          <label for="language">Translate to:</label>
+          <select id="language"></select>
+        </div>
+        <div class="error-container" style="display: none">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M10.5 9.90003V5.41447M10.5 13.2248V13.2642M16.1699 17H4.83007C3.2811 17 1.97392 15.9763 1.56265 14.5757C1.38709 13.9778 1.60281 13.3551 1.93276 12.8249L7.60269 2.60102C8.9311 0.466323 12.0689 0.466326 13.3973 2.60103L19.0672 12.8249C19.3972 13.3551 19.6129 13.9778 19.4373 14.5757C19.0261 15.9763 17.7189 17 16.1699 17Z"
+              stroke="#E94D42"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <p>Something went wrong.</p>
+          <button class="retry-button">Retry</button>
         </div>
       </div>
     </div>
 
     <div id="player-view">
-      <div id="track-info" style="display: none">
-        <div class="language-selector">
-          <label for="language">Translate to:</label>
-          <select id="language"></select>
-        </div>
-        <div id="track-display">
-          <h3 id="track"></h3>
-
-          <div id="lyrics-container"></div>
-          <div id="translated-lyrics-container"></div>
-        </div>
-        <!-- 
-        <button class="translate-button">Translate Lyrics</button> -->
-      </div>
-
       <div id="no-track-view" style="display: none">
         <h3>Nothing Playing</h3>
         <p>Play a song on Spotify to see its lyrics and translations.</p>
@@ -50,25 +50,6 @@
       </div>
     </div>
 
-    <div class="error-container" style="display: none">
-      <svg
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M10.5 9.90003V5.41447M10.5 13.2248V13.2642M16.1699 17H4.83007C3.2811 17 1.97392 15.9763 1.56265 14.5757C1.38709 13.9778 1.60281 13.3551 1.93276 12.8249L7.60269 2.60102C8.9311 0.466323 12.0689 0.466326 13.3973 2.60103L19.0672 12.8249C19.3972 13.3551 19.6129 13.9778 19.4373 14.5757C19.0261 15.9763 17.7189 17 16.1699 17Z"
-          stroke="#E94D42"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-      <p>Something went wrong.</p>
-      <button class="retry-button">Retry</button>
-    </div>
     <script src="popup.js" type="module"></script>
   </body>
 </html>
