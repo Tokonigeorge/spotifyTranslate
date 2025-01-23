@@ -25,35 +25,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       const lyricsList = message.lyrics;
 
       if (lyricsList?.length > 0) {
-        // if (JSON.stringify(lyricsList) !== JSON.stringify(lastLyrics)) {
         lastLyrics = lyricsList;
-        console.log('lyrics again', lyricsList);
 
         updateTrackDisplay(selectedLanguage || 'en', lyricsList);
-        // }
       } else {
         errorMessage = "Couldn't get lyrics";
       }
     }
   });
-
-  // chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  //   if (message.type === 'lyricsUpdate') {
-  //     const lyricsList = message.lyrics;
-
-  //     if (lyricsList?.length > 0) {
-  //       if (JSON.stringify(lyricsList) !== JSON.stringify(lastLyrics)) {
-  //         lastLyrics = lyricsList;
-  //         console.log('updating display', lyricsList);
-  //         updateTrackDisplay(selectedLanguage || 'en', lyricsList);
-  //       }
-  //     } else {
-  //       errorMessage = "Couldn't get lyrics";
-  //     }
-  //     sendResponse({ success: true });
-  //     return true;
-  //   }
-  // });
 
   languageSelect.addEventListener('change', async (e) => {
     console.log(e.target.value, 'selected');
@@ -67,13 +46,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function updateTrackDisplay(language, lyrics) {
   const errorContainer = document.querySelector('.error-container');
   if (lyrics.length > 0) {
-    // const mutatedLyrics = lyrics?.join('\n');
-
     const cleanLyricsForTranslation = lyrics
       .filter((line) => line.trim() !== '' && line.trim() !== '♪')
       ?.join('\n');
-
-    console.log(cleanLyricsForTranslation, 'wee');
 
     const translatedLyrics = await translateText(
       cleanLyricsForTranslation,
@@ -87,7 +62,7 @@ async function updateTrackDisplay(language, lyrics) {
         lyrics,
         translatedLyricsArray
       );
-      console.log('translation', cleanedTranslatedLyrics, lyrics);
+
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs.length > 0) {
           chrome.tabs.sendMessage(tabs[0].id, {

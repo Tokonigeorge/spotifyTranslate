@@ -156,7 +156,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       JSON.stringify(request.lyrics) !== JSON.stringify(lastLyrics)
     ) {
       lastLyrics = request.lyrics;
-      console.log('lyrics now:', request.lyrics);
 
       popupPort.postMessage({
         type: 'lyricsUpdate',
