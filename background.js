@@ -132,7 +132,8 @@ async function checkCurrentTrack() {
   }
 }
 let popupPort = null; // To keep track of the connected popup
-let lastLyrics = [];
+// let lastLyrics = [];
+let lastSongData = null;
 // Listen for connection from popup
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name === 'popup') {
@@ -153,13 +154,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Send the updated lyrics to the popup if it's connected
     if (
       popupPort &&
-      JSON.stringify(request.lyrics) !== JSON.stringify(lastLyrics)
+      (!lastSongData ||
+        JSON.stringify(request.songData) !== JSON.stringify(lastSongData))
     ) {
-      lastLyrics = request.lyrics;
+      lastSongData = request.songData;
 
       popupPort.postMessage({
         type: 'lyricsUpdate',
-        lyrics: request.lyrics,
+        songData: request?.songData,
       });
     }
 

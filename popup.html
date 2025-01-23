@@ -20,6 +20,19 @@
           <label for="language">Translate to:</label>
           <select id="language"></select>
         </div>
+        <div class="now-playing" style="display: none">
+          <p>Currently Playing:</p>
+          <div class="now-playing-content">
+            <div>
+              <img src="" class="cover-art" width="60px" height="40px" />
+            </div>
+
+            <div>
+              <p class="song-title"></p>
+              <p class="artists-name"></p>
+            </div>
+          </div>
+        </div>
         <div class="error-container" style="display: none">
           <svg
             width="24"
@@ -39,14 +52,6 @@
           <p>Something went wrong.</p>
           <button class="retry-button">Retry</button>
         </div>
-      </div>
-    </div>
-
-    <div id="player-view">
-      <div id="no-track-view" style="display: none">
-        <h3>Nothing Playing</h3>
-        <p>Play a song on Spotify to see its lyrics and translations.</p>
-        <button class="check-track-button">Check Now</button>
       </div>
     </div>
 

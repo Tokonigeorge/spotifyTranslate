@@ -7,9 +7,29 @@ console.log('here oo');
         const lyricsWrapperList = document.querySelectorAll(
           "div[data-testid='fullscreen-lyric']"
         );
+        const nowPlaying = document.querySelector(
+          "div[data-testid='now-playing-widget']"
+        );
+        const coverArtImgEl = document.querySelector(
+          "img[data-testid='cover-art-image']"
+        );
+        const coverArtImgSrc = coverArtImgEl ? coverArtImgEl.src : null;
+        const songTitleEl = document.querySelector(
+          "div[data-testid='context-item-info-title']"
+        );
+        const songTitle = songTitleEl ? songTitleEl.textContent.trim() : null;
+        const artistsEl = document.querySelectorAll(
+          "span[data-testid='context-item-info-artist']"
+        );
+        const artists =
+          artistsEl.length > 0
+            ? Array.from(artistsEl)
+                .map((artist) => artist.textContent.trim())
+                .join(', ')
+            : null;
 
+        const lyricsList = [];
         if (lyricsWrapperList.length > 0) {
-          const lyricsList = [];
           const originalLyricsList =
             document.querySelectorAll('.original-lyrics');
 
@@ -33,50 +53,19 @@ console.log('here oo');
             });
           }
 
-          //start here
-          // const lyricsList = [];
+          const songData = {
+            coverArt: coverArtImgSrc,
+            songTitle,
+            artists,
+            lyricsList,
+          };
 
-          // lyricsWrapperList.forEach((lyricsWrapper) => {
-          //   const lyrics = lyricsWrapper.textContent.trim();
-          //   lyricsList.push(lyrics);
-          // });
-
-          // if (JSON.stringify(lyricsList) !== JSON.stringify(lastLyrics)) {
-          //   // Update the stored lyrics
-          //   lastLyrics = lyricsList;
-
-          //   // Send the new lyrics to the background script
-          //   chrome.runtime.sendMessage(
-          //     {
-          //       type: 'lyricSend',
-          //       lyrics: lyricsList,
-          //     },
-          //     (response) => {
-          //       if (chrome.runtime.lastError) {
-          //         console.error(
-          //           'Failed to send message:',
-          //           chrome.runtime.lastError.message
-          //         );
-          //       } else {
-          //         console.log('Lyrics sent successfully:', response);
-          //       }
-          //     }
-          //   );
-          // }
           if (chrome.runtime?.id) {
             chrome.runtime.sendMessage({
               type: 'lyricSend',
-              lyrics: lyricsList,
+              songData,
             });
           }
-
-          // chrome.runtime.onInstalled.addListener(() => {
-          //   chrome.runtime.sendMessage({
-          //     type: 'lyricSend',
-          //     lyrics: lyricsList,
-          //   });
-          //   console.log('Extension installed, background script ready');
-          // });
 
           // Optionally, stop observing if you're only interested in one capture
           // observer.disconnect();

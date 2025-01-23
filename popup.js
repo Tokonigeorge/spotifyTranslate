@@ -4,16 +4,13 @@ import { translateText } from './src/services/translation.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const languageSelect = document.getElementById('language');
-  const nowPlaying = document.querySelector(
-    "div[data-testid='now-playing-widget']"
-  );
-  const mainTextContainer = document.getElementById('main-text');
+  const errorContainer = document.querySelector('.error-container');
+  const languageSelector = document.querySelector('.language-selector');
 
   const { selectedLanguage } = await chrome.storage.local.get(
     'selectedLanguage'
   );
-  let lastLyrics = [];
-  let errorMessage = '';
+  let lyrics = [];
 
   populateLanguages();
 
@@ -22,14 +19,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   const port = chrome.runtime.connect({ name: 'popup' });
   port.onMessage.addListener((message) => {
     if (message.type === 'lyricsUpdate') {
-      const lyricsList = message.lyrics;
+      const songData = message.songData;
+      const lyricsList = songData?.lyrics;
+
+      languageSelector.style.display = 'block';
+
+      errorContainer.style.display = 'none';
+
+      updateTrackDisplay(songData);
 
       if (lyricsList?.length > 0) {
-        lastLyrics = lyricsList;
+        lyrics = lyricsList;
 
-        updateTrackDisplay(selectedLanguage || 'en', lyricsList);
-      } else {
-        errorMessage = "Couldn't get lyrics";
+        updateLyricDisplay(selectedLanguage || 'en', lyricsList);
       }
     }
   });
@@ -38,14 +40,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log(e.target.value, 'selected');
     await chrome.storage.local.set({ selectedLanguage });
     if (lyrics?.length > 0) {
-      await updateTrackDisplay(e.target.value, lyrics);
+      await updateLyricDisplay(e.target.value, lyrics);
     }
   });
-});
 
-async function updateTrackDisplay(language, lyrics) {
-  const errorContainer = document.querySelector('.error-container');
-  if (lyrics.length > 0) {
+  async function updateLyricDisplay(language, lyrics) {
+    const nowPlaying = document.querySelector('.now-playing');
+
     const cleanLyricsForTranslation = lyrics
       .filter((line) => line.trim() !== '' && line.trim() !== '♪')
       ?.join('\n');
@@ -74,15 +75,35 @@ async function updateTrackDisplay(language, lyrics) {
         }
       });
     } else {
+      //display error
+      languageSelector.style.display = 'none';
+      nowPlaying.style.display = 'none';
       errorContainer.style.display = 'block';
     }
-  } else {
-    lyricsContainer.innerHTML =
-      '<p>You got me, no lyrics available for this track.</p>';
+
+    // trackInfo.style.display = 'block';
+    // noTrackView.style.display = 'none';
   }
-  // trackInfo.style.display = 'block';
-  // noTrackView.style.display = 'none';
-}
+});
+
+const updateTrackDisplay = (songData) => {
+  const nowPlaying = document.querySelector('.now-playing');
+  const coverArtEl = document.querySelector('.cover-art');
+  const artistsEl = document.querySelector('.song-title');
+  const songTitleEl = document.querySelector('.artists-name');
+
+  if (songData.coverArt && songData.songTitle && songData.artists) {
+    nowPlaying.style.display = 'block';
+
+    coverArtEl.src = songData.coverArt;
+
+    songTitleEl.textContent = songData.songTitle;
+
+    artistsEl.textContent = songData.artists;
+  } else {
+    nowPlaying.style.display = 'none';
+  }
+};
 
 function populateLanguages() {
   const languageSelect = document.getElementById('language');
