@@ -3,7 +3,6 @@ import { languages } from './src/services/language.js';
 import { translateText } from './src/services/translation.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('here oo');
   const languageSelect = document.getElementById('language');
   const nowPlaying = document.querySelector(
     "div[data-testid='now-playing-widget']"
@@ -13,26 +12,48 @@ document.addEventListener('DOMContentLoaded', async () => {
   const { selectedLanguage } = await chrome.storage.local.get(
     'selectedLanguage'
   );
-  const lyrics = [];
-  const errorMessage = '';
+  let lastLyrics = [];
+  let errorMessage = '';
 
   populateLanguages();
 
   await navigateToSpotifyTab();
 
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  const port = chrome.runtime.connect({ name: 'popup' });
+  port.onMessage.addListener((message) => {
     if (message.type === 'lyricsUpdate') {
       const lyricsList = message.lyrics;
-      console.log('got lyrics', lyricsList);
+
       if (lyricsList?.length > 0) {
+        // if (JSON.stringify(lyricsList) !== JSON.stringify(lastLyrics)) {
+        lastLyrics = lyricsList;
+        console.log('lyrics again', lyricsList);
+
         updateTrackDisplay(selectedLanguage || 'en', lyricsList);
+        // }
       } else {
         errorMessage = "Couldn't get lyrics";
       }
-
-      console.log('Lyrics received in popup:', lyricsList);
     }
   });
+
+  // chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  //   if (message.type === 'lyricsUpdate') {
+  //     const lyricsList = message.lyrics;
+
+  //     if (lyricsList?.length > 0) {
+  //       if (JSON.stringify(lyricsList) !== JSON.stringify(lastLyrics)) {
+  //         lastLyrics = lyricsList;
+  //         console.log('updating display', lyricsList);
+  //         updateTrackDisplay(selectedLanguage || 'en', lyricsList);
+  //       }
+  //     } else {
+  //       errorMessage = "Couldn't get lyrics";
+  //     }
+  //     sendResponse({ success: true });
+  //     return true;
+  //   }
+  // });
 
   languageSelect.addEventListener('change', async (e) => {
     console.log(e.target.value, 'selected');
@@ -46,17 +67,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function updateTrackDisplay(language, lyrics) {
   const errorContainer = document.querySelector('.error-container');
   if (lyrics.length > 0) {
-    const mutatedLyrics = lyrics?.join('\n');
-    const translatedLyrics = await translateText(mutatedLyrics, language);
+    // const mutatedLyrics = lyrics?.join('\n');
 
-    if (translatedLyrics?.length > 0) {
+    const cleanLyricsForTranslation = lyrics
+      .filter((line) => line.trim() !== '' && line.trim() !== '♪')
+      ?.join('\n');
+
+    console.log(cleanLyricsForTranslation, 'wee');
+
+    const translatedLyrics = await translateText(
+      cleanLyricsForTranslation,
+      language
+    );
+    const translatedLyricsArray = translatedLyrics?.[0].split('\n');
+
+    if (translatedLyricsArray?.length > 0) {
       errorContainer.style.display = 'none';
-
+      const cleanedTranslatedLyrics = alignTranslatedToOriginal(
+        lyrics,
+        translatedLyricsArray
+      );
+      console.log('translation', cleanedTranslatedLyrics, lyrics);
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs.length > 0) {
           chrome.tabs.sendMessage(tabs[0].id, {
             type: 'translationLyrics',
-            translatedLyrics: translatedLyrics,
+            translatedLyrics: cleanedTranslatedLyrics,
           });
         } else {
           console.error('No active tab found.');
@@ -112,4 +148,23 @@ async function navigateToSpotifyTab() {
     // If no Spotify tab exists, create one
     await chrome.tabs.create({ url: 'https://open.spotify.com' });
   }
+}
+
+function alignTranslatedToOriginal(originalLyrics, translatedLyrics) {
+  const alignedTranslated = [];
+  let translatedIndex = 0; // Pointer for the translated lyrics array
+
+  // Iterate over the original lyrics array
+  originalLyrics.forEach((originalLine) => {
+    if (originalLine.trim() === '' || originalLine.trim() === '♪') {
+      // Preserve empty strings and musical characters
+      alignedTranslated.push(originalLine);
+    } else {
+      // Match translated lyric to the original lyric
+      alignedTranslated.push(translatedLyrics[translatedIndex] || '');
+      translatedIndex++; // Move to the next translated lyric
+    }
+  });
+
+  return alignedTranslated;
 }

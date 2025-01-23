@@ -131,32 +131,70 @@ async function checkCurrentTrack() {
     return null;
   }
 }
+let popupPort = null; // To keep track of the connected popup
+let lastLyrics = [];
+// Listen for connection from popup
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'popup') {
+    popupPort = port; // Save the connection for later use
+    console.log('Popup connected');
 
+    // Handle disconnection
+    port.onDisconnect.addListener(() => {
+      console.log('Popup disconnected');
+      popupPort = null;
+    });
+  }
+});
+
+// Example: Listen for data updates from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'lyricSend') {
-    chrome.runtime.sendMessage({
-      type: 'lyricsUpdate',
-      lyrics: request.lyrics,
-    });
+    // Send the updated lyrics to the popup if it's connected
+    if (
+      popupPort &&
+      JSON.stringify(request.lyrics) !== JSON.stringify(lastLyrics)
+    ) {
+      lastLyrics = request.lyrics;
+      console.log('lyrics now:', request.lyrics);
+
+      popupPort.postMessage({
+        type: 'lyricsUpdate',
+        lyrics: request.lyrics,
+      });
+    }
+
     sendResponse({ success: true });
     return true;
   }
-  if (request.type === 'getToken') {
-    getAuthToken().then((token) => {
-      sendResponse({ token });
-    });
-    return true;
-  }
-
-  if (request.type === 'checkAuth') {
-    sendResponse({ isAuthenticated: !!accessToken });
-    return true;
-  }
-
-  if (request.type === 'getCurrentTrack') {
-    checkCurrentTrack().then((track) => {
-      sendResponse({ track });
-    });
-    return true;
-  }
 });
+
+// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+//   if (request.type === 'lyricSend') {
+//     console.log('send 1');
+//     chrome.runtime.sendMessage({
+//       type: 'lyricsUpdate',
+//       lyrics: request.lyrics,
+//     });
+//     sendResponse({ success: true });
+//     return true;
+//   }
+//   if (request.type === 'getToken') {
+//     getAuthToken().then((token) => {
+//       sendResponse({ token });
+//     });
+//     return true;
+//   }
+
+//   if (request.type === 'checkAuth') {
+//     sendResponse({ isAuthenticated: !!accessToken });
+//     return true;
+//   }
+
+//   if (request.type === 'getCurrentTrack') {
+//     checkCurrentTrack().then((track) => {
+//       sendResponse({ track });
+//     });
+//     return true;
+//   }
+// });

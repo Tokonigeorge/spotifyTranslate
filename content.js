@@ -10,10 +10,36 @@ console.log('here oo');
 
         if (lyricsWrapperList.length > 0) {
           const lyricsList = [];
-          lyricsWrapperList.forEach((lyricsWrapper) => {
-            const lyrics = lyricsWrapper.textContent.trim();
-            lyricsList.push(lyrics);
-          });
+          const originalLyricsList =
+            document.querySelectorAll('.original-lyrics');
+
+          if (originalLyricsList.length > 0) {
+            // Extract text from divs that already have the "original-lyrics" class
+            originalLyricsList.forEach((originalLyric) => {
+              const lyric = originalLyric.textContent.trim();
+              lyricsList.push(lyric);
+            });
+          } else {
+            // Process the "lyricsWrapperList" for the first time
+            lyricsWrapperList.forEach((lyricsWrapper) => {
+              const firstChild = lyricsWrapper.querySelector('div'); // Get the first child div
+              if (firstChild) {
+                const lyric = firstChild.textContent.trim(); // Get text content of the first child
+                lyricsList.push(lyric);
+
+                // Add the "original-lyrics" class to the first child div
+                firstChild.classList.add('original-lyrics');
+              }
+            });
+          }
+
+          //start here
+          // const lyricsList = [];
+
+          // lyricsWrapperList.forEach((lyricsWrapper) => {
+          //   const lyrics = lyricsWrapper.textContent.trim();
+          //   lyricsList.push(lyrics);
+          // });
 
           // if (JSON.stringify(lyricsList) !== JSON.stringify(lastLyrics)) {
           //   // Update the stored lyrics
@@ -37,10 +63,12 @@ console.log('here oo');
           //     }
           //   );
           // }
-          chrome.runtime.sendMessage({
-            type: 'lyricSend',
-            lyrics: lyricsList,
-          });
+          if (chrome.runtime?.id) {
+            chrome.runtime.sendMessage({
+              type: 'lyricSend',
+              lyrics: lyricsList,
+            });
+          }
 
           // chrome.runtime.onInstalled.addListener(() => {
           //   chrome.runtime.sendMessage({
@@ -83,8 +111,13 @@ console.log('here oo');
           "div[data-testid='fullscreen-lyric']"
         );
         console.log(message.translatedLyrics, 'translated');
-        const lyricsTranslations = message.translatedLyrics?.[0].split('\n');
+        const lyricsTranslations = message.translatedLyrics;
+
         if (lyricsWrapperList && lyricsTranslations.length > 0) {
+          // First, remove all existing elements with the class name "translated"
+          document.querySelectorAll('.translated').forEach((element) => {
+            element.remove();
+          });
           lyricsWrapperList.forEach((lyricsWrapper, index) => {
             // Create a new <div> for the translation
             const translationDiv = document.createElement('div');
@@ -92,6 +125,8 @@ console.log('here oo');
             translationDiv.style.fontStyle = 'italic'; // Optional: Add styling
             translationDiv.style.color = '#999'; // Optional: Change text color
 
+            // Add a class name to the new div
+            translationDiv.className = 'translated';
             // Insert the translation <div> below the original lyric
             // lyricsWrapper.appendChild(translationDiv);
             const lyricsChildren = Array.from(lyricsWrapper.children);

@@ -26,7 +26,6 @@ app.post('/api/translate', async (req, res) => {
   try {
     const textArray = Array.isArray(text) ? text : [text];
     const combinedText = textArray.join('\n');
-    console.log('text', combinedText, targetLanguage);
     const response = await fetch(
       `${TRANSLATION_API}&sl=auto&tl=${targetLanguage}&q=${encodeURIComponent(
         combinedText
