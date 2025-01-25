@@ -6,42 +6,111 @@ document.addEventListener('DOMContentLoaded', async () => {
   const languageSelect = document.getElementById('language');
   const errorContainer = document.querySelector('.error-container');
   const languageSelector = document.querySelector('.language-selector');
+  const retryButton = document.querySelector('.retry-button');
 
   const { selectedLanguage } = await chrome.storage.local.get(
     'selectedLanguage'
   );
+  console.log(selectedLanguage, 'wee language');
   let lyrics = [];
+  let lastSongData = null;
 
-  populateLanguages();
+  populateLanguages(selectedLanguage);
 
   await navigateToSpotifyTab();
+  console.log(lastSongData, 'lastsongdata');
+  if (!lastSongData) {
+    chrome.runtime.sendMessage({ action: 'getCurrentSongData' }, (response) => {
+      console.log('im running 1');
+      if (response?.songData) {
+        console.log('im running 2');
+        const songData = response.songData;
+        lastSongData = songData;
+        const lyricsList = songData?.lyricsList;
+        languageSelector.style.display = 'block';
+
+        errorContainer.style.display = 'none';
+        console.log(songData, 'songData');
+        updateTrackDisplay(songData);
+
+        if (lyricsList?.length > 0) {
+          lyrics = lyricsList;
+
+          updateLyricDisplay(selectedLanguage || 'en', lyricsList);
+        }
+      } else {
+        console.log('No song data found, requesting re-observation.');
+        // If no song data is available, trigger content script
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]?.id) {
+            chrome.tabs.sendMessage(tabs[0].id, { type: 'triggerObservation' });
+          }
+        });
+      }
+    });
+  }
 
   const port = chrome.runtime.connect({ name: 'popup' });
   port.onMessage.addListener((message) => {
+    console.log(lastSongData, 'norequest');
     if (message.type === 'lyricsUpdate') {
       const songData = message.songData;
-      const lyricsList = songData?.lyrics;
+      console.log(lastSongData, 'update', songData);
+      if (JSON.stringify(lastSongData) !== JSON.stringify(songData)) {
+        lastSongData = songData;
 
-      languageSelector.style.display = 'block';
+        const lyricsList = songData?.lyricsList;
 
-      errorContainer.style.display = 'none';
+        languageSelector.style.display = 'block';
 
-      updateTrackDisplay(songData);
+        errorContainer.style.display = 'none';
+        console.log(songData, 'songData');
+        updateTrackDisplay(songData);
 
-      if (lyricsList?.length > 0) {
-        lyrics = lyricsList;
+        if (lyricsList?.length > 0) {
+          lyrics = lyricsList;
 
-        updateLyricDisplay(selectedLanguage || 'en', lyricsList);
+          updateLyricDisplay(selectedLanguage || 'en', lyricsList);
+        }
       }
     }
   });
 
   languageSelect.addEventListener('change', async (e) => {
     console.log(e.target.value, 'selected');
-    await chrome.storage.local.set({ selectedLanguage });
+    await chrome.storage.local.set({ selectedLanguage: e.target.value });
+    console.log('kyrics', lyrics);
     if (lyrics?.length > 0) {
       await updateLyricDisplay(e.target.value, lyrics);
     }
+  });
+
+  retryButton.addEventListener('click', async (e) => {
+    chrome.runtime.sendMessage({ action: 'getCurrentSongData' }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error(
+          'Error sending message:',
+          chrome.runtime.lastError.message
+        );
+        return;
+      }
+      if (response?.songData) {
+        const songData = response.songData;
+        lastSongData = songData;
+        const lyricsList = songData?.lyricsList;
+        languageSelector.style.display = 'block';
+
+        errorContainer.style.display = 'none';
+        console.log(songData, 'songData');
+        updateTrackDisplay(songData);
+
+        if (lyricsList?.length > 0) {
+          lyrics = lyricsList;
+
+          updateLyricDisplay(selectedLanguage || 'en', lyricsList);
+        }
+      }
+    });
   });
 
   async function updateLyricDisplay(language, lyrics) {
@@ -55,10 +124,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       cleanLyricsForTranslation,
       language
     );
-    const translatedLyricsArray = translatedLyrics?.[0].split('\n');
+
+    // translatedLyrics?.[0].split('\n');
+    const translatedLyricsArray =
+      translatedLyrics?.length > 1
+        ? translatedLyrics
+        : translatedLyrics?.[0].split('\n');
 
     if (translatedLyricsArray?.length > 0) {
       errorContainer.style.display = 'none';
+
       const cleanedTranslatedLyrics = alignTranslatedToOriginal(
         lyrics,
         translatedLyricsArray
@@ -105,12 +180,15 @@ const updateTrackDisplay = (songData) => {
   }
 };
 
-function populateLanguages() {
+function populateLanguages(selectedLanguage) {
   const languageSelect = document.getElementById('language');
   languages.forEach((lang) => {
     const option = document.createElement('option');
     option.value = lang.code;
     option.textContent = lang.name;
+    if (lang.code === selectedLanguage) {
+      option.selected = true;
+    }
     languageSelect.appendChild(option);
   });
 }

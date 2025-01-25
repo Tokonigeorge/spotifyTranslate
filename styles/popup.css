@@ -69,6 +69,7 @@ hr {
   flex-direction: column;
   align-items: center;
   padding: 24px 0;
+  text-align: center;
 }
 
 .error-container p {
