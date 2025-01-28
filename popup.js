@@ -10,20 +10,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const { selectedLanguage } = await chrome.storage.local.get(
     'selectedLanguage'
   );
-  console.log(selectedLanguage, 'wee language');
-  let lyrics = [];
+
   let lastSongData = null;
 
   populateLanguages(selectedLanguage);
 
   await navigateToSpotifyTab();
-  console.log(lastSongData, 'lastsongdata');
-  //on int=it, get the currentsongData
-  //display
-  //if error listened on, display and then retry
-  //retry sends a message to content I think or returned response on the listener
-  //set language in store
-  //every onchnage triiger, send message to content.js
+
   if (!lastSongData) {
     chrome.runtime.sendMessage({ action: 'getCurrentSongData' }, (response) => {
       if (response?.songData) {
@@ -55,8 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (JSON.stringify(lastSongData) !== JSON.stringify(songData)) {
         lastSongData = songData;
 
-        const lyricsList = songData?.lyricsList;
-
         languageSelector.style.display = 'block';
 
         errorContainer.style.display = 'none';
@@ -67,8 +58,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   languageSelect.addEventListener('change', async (e) => {
-    console.log(e.target.value, 'selected');
-    await chrome.storage.local.set({ selectedLanguage: e.target.value });
+    console.log('target', e.target.value, 'language', selectedLanguage);
+    if (e.target.value !== selectedLanguage) {
+      chrome.runtime.sendMessage({
+        type: 'languageChange',
+        newValue: e.target.value,
+      });
+      await chrome.storage.local.set({ selectedLanguage: e.target.value });
+    }
   });
 
   // retryButton.addEventListener('click', async (e) => {
@@ -122,7 +119,6 @@ const updateTrackDisplay = (songData) => {
 function populateLanguages(selectedLanguage) {
   const languageSelect = document.getElementById('language');
   languages.forEach((lang) => {
-    console.log('here o', lang);
     const option = document.createElement('option');
     option.value = lang.code;
     option.textContent = lang.name;

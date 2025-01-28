@@ -39,7 +39,7 @@ console.log('running content script');
 
   const alignTranslatedToOriginal = (originalLyrics, translatedLyrics) => {
     const alignedTranslatedLyrics = [];
-    let translatedIndex = 0; // Pointer for the translated lyrics array
+    let translatedIndex = 0;
 
     // Iterate over the original lyrics array
     originalLyrics.forEach((originalLine) => {
@@ -49,7 +49,7 @@ console.log('running content script');
       } else {
         // Match translated lyric to the original lyric
         alignedTranslatedLyrics.push(translatedLyrics[translatedIndex] || '');
-        translatedIndex++; // Move to the next translated lyric
+        translatedIndex++;
       }
     });
     console.log('aligned translations,', alignedTranslatedLyrics);
@@ -116,9 +116,9 @@ console.log('running content script');
       } else {
         // Process the "lyricsWrapperList" for the first time
         lyricsWrapperList.forEach((lyricsWrapper) => {
-          const firstChild = lyricsWrapper.querySelector('div'); // Get the first child div
+          const firstChild = lyricsWrapper.querySelector('div');
           if (firstChild) {
-            const lyric = firstChild.textContent.trim(); // Get text content of the first child
+            const lyric = firstChild.textContent.trim();
             lyricsList.push(lyric);
 
             // Add the "original-lyrics" class to the first child div
@@ -139,7 +139,6 @@ console.log('running content script');
       coverArt: coverArtImgSrc,
       songTitle,
       artists,
-      // lyricsList,
     };
 
     if (chrome.runtime?.id) {
@@ -149,21 +148,25 @@ console.log('running content script');
       });
     }
     console.log('lastLyrics', lastLyrics, 'current lyrics', lyricsList);
-    if (JSON.stringify(lastLyrics) !== JSON.stringify(lyricsList)) {
+    if (
+      JSON.stringify(lastLyrics) !== JSON.stringify(lyricsList) &&
+      lyricsList.length > 0
+    ) {
       lastLyrics = lyricsList;
       await translateLyrics(lyricsList, selectedLanguage || 'en');
     }
   };
 
-  chrome.storage.onChanged.addListener(async (changes, area) => {
-    if (area === 'local' && changes.selectedLanguage) {
-      await translateLyrics(
-        lastLyrics,
-        changes.selectedLanguage?.newValue || 'en'
-      );
-      console.log('Language changed to:', changes.selectedLanguage.newValue);
-    }
-  });
+  // chrome.storage.onChanged.addListener(async (changes, area) => {
+  //   console.log('here', area, changes.selectedLanguage);
+  //   if (area === 'local' && changes.selectedLanguage) {
+  //     await translateLyrics(
+  //       lastLyrics,
+  //       changes.selectedLanguage?.newValue || 'en'
+  //     );
+  //     console.log('Language changed to:', changes.selectedLanguage.newValue);
+  //   }
+  // });
 
   const observeLyrics = () => {
     let isObserving = false;
@@ -181,29 +184,27 @@ console.log('running content script');
       );
       return;
     }
-    //TODO: Compare last songData to current songData
-    //if the same, do nothing, if different translate
-    //send to background.js regardless
-    //translation: line by line
-    //update view
-    //if error translating, show nothing and send error message to popup
-    //use chrome.storage.onchange to know when the selected language changes
+    let mutationDetected = false;
     const observer = new MutationObserver((mutations) => {
-      console.log('mutation observed');
+      mutationDetected = true;
       mutations.forEach(() => {
         const currentLyrics = getCurrentSongData();
         lastLyrics = currentLyrics;
       });
     });
 
+    setTimeout(() => {
+      if (!mutationDetected) {
+        console.log('No mutations detected; manually fetching song data');
+        const currentLyrics = getCurrentSongData();
+        lastLyrics = currentLyrics; // Update the lyrics
+      }
+    }, 1000);
+
     //  observe only the now playing
     observer.observe(nowPlaying, {
-      childList: true, // Watch for changes in the direct children of the observed node
-      subtree: true, // Also watch for changes in the children of children
-      // attributes: true,
-      // characterData: true,
-      // attributeOldValue: true,
-      // characterDataOldValue: true,
+      childList: true,
+      subtree: true,
     });
     isObserving = true;
     window.addEventListener('unload', () => {
@@ -224,27 +225,25 @@ console.log('running content script');
     const nowPlaying = document.querySelector(
       'div[data-testid="now-playing-widget"]'
     );
-    console.log('triggering check');
+    console.log('testing interval');
     if (nowPlaying) {
       clearInterval(interval);
-      observeLyrics(); // Initialize observation once the element is available
+      observeLyrics();
     }
-  }, 500); // Check every 500ms
+  }, 500);
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Language don change o');
     if (message.type === 'triggerObservation') {
       console.log('Manual observation trigger received');
-      observeLyrics(); // Trigger the observer manually
+      observeLyrics();
+    }
+    if (message.type === 'languageChange') {
+      const newLanguage = message.newValue || 'en';
+      console.log('Language changed to:', newLanguage);
+      translateLyrics(lastLyrics, newLanguage);
     }
   });
-
-  chrome.runtime.onMessage.addListener(
-    async (message, sender, sendResponse) => {
-      if (message.type === 'translationLyrics') {
-        updateLyricsContainer(message.translatedLyrics);
-      }
-    }
-  );
 })();
 
 const SERVER_URL = 'http://localhost:3000';
