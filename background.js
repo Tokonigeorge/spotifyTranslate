@@ -13,7 +13,7 @@ chrome.runtime.onConnect.addListener((port) => {
         songData: currentSongData,
       });
     }
-    // Handle disconnection
+
     port.onDisconnect.addListener(() => {
       console.log('Popup disconnected');
       popupPort = null;
@@ -23,19 +23,15 @@ chrome.runtime.onConnect.addListener((port) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'songDataUpdate') {
-    console.log('trigger too', request.songData);
-
     currentSongData = request?.songData;
     if (popupPort) {
       popupPort.postMessage({
         type: 'lyricsUpdate',
         songData: currentSongData,
       });
-      console.log('I recieved a ping');
     }
 
     sendResponse({ success: true });
-    // return true;
   }
 
   if (request.action === 'getCurrentSongData') {

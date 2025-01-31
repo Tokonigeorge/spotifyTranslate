@@ -2,16 +2,41 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import helmet from 'helmet';
 
 dotenv.config();
 
-const app = express();
-const port = process.env.PORT || 3000;
+const allowedOrigins = [
+  'chrome-extension://your-extension-id',
+  'https://your-frontend-url.com',
+];
 
-app.use(cors());
+const app = express();
+// app.use(cors());
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin) || origin === undefined) {
+        // Allow requests with no origin (e.g., Postman, curl)
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'x-api-key'],
+  })
+);
 app.use(express.json());
+app.use(helmet());
 
 const TRANSLATION_API = process.env.TRANSLATION_API + '/single?client=gtx&dt=t';
+
+const PORT = process.env.PORT || 3000;
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
 // Endpoint to translate text
 app.post('/api/translate', async (req, res) => {
@@ -34,10 +59,8 @@ app.post('/api/translate', async (req, res) => {
     }
 
     const data = await response.json();
-    // // Split the response back into lines
     const translatedTexts = data[0] || [];
     const cleanedTranslatedTexts = translatedTexts.map((translation) => {
-      // Ensure translation is valid
       if (Array.isArray(translation) && translation[0]) {
         return translation[0].trim();
       }
@@ -50,15 +73,11 @@ app.post('/api/translate', async (req, res) => {
   } catch (error) {
     console.error('Translation error:', error);
     res.status(500).json({ error: 'Translation failed' });
-    throw new Error(`Translation failed`);
   }
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}/api`);
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+export default app;

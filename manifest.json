@@ -12,9 +12,9 @@
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "assets/ext-icon.png",
-      "24": "assets/ext-icon.png",
-      "32": "assets/ext-icon.png"
+      "16": "assets/translate.png",
+      "24": "assets/translate.png",
+      "32": "assets/translate.png"
     }
   },
   "content_scripts": [
@@ -35,9 +35,8 @@
     "type": "module"
   },
   "icons": {
-    "16": "assets/ext-icon.png",
-    "24": "assets/ext-icon.png",
-    "32": "assets/ext-icon.png"
-  },
-  "key": "nnkekmfciajaipllgmpieoccgenjcplg"
+    "16": "assets/translate.png",
+    "24": "assets/translate.png",
+    "32": "assets/translate.png"
+  }
 }
