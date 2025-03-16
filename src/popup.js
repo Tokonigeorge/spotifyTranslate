@@ -34,6 +34,7 @@ class PopupState {
   setupMessageListener() {
     this.port.onMessage.addListener((message) => {
       if (message.type === 'lyricsUpdate') {
+        console.log('handle song update call');
         this.handleSongDataUpdate(message.songData);
       }
     });

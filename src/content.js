@@ -1,6 +1,9 @@
 console.log('running content script');
+const MAX_INIT_TIME = 60000;
+
 let lastLyrics = null;
 let previouslyTranslatedLyrics = [];
+let currentLyrics = [];
 
 const removeTranslatedLyrics = () => {
   document
@@ -73,7 +76,7 @@ const alignTranslatedToOriginal = (originalLyrics, translatedLyrics) => {
 
   originalLyrics.forEach((originalLine) => {
     if (originalLine.trim() === '' || originalLine.trim() === '♪') {
-      alignedTranslatedLyrics.push(originalLine);
+      alignedTranslatedLyrics.push('');
     } else {
       alignedTranslatedLyrics.push(translatedLyrics[translatedIndex] || '');
       translatedIndex++;
@@ -88,7 +91,7 @@ const translateLyrics = async (lyrics, language) => {
   const translatedLyrics = [];
   let successfulTranslations = 0;
 
-  const batchSize = 5;
+  const batchSize = 10;
 
   const translationBatches = [];
   for (let i = 0; i < lyrics.length; i += batchSize) {
@@ -127,42 +130,32 @@ const translateLyrics = async (lyrics, language) => {
   updateLyricsContainer(cleanedTranslatedLyrics);
 };
 
-const findLyrics = async (maxAttempts = 10) => {
-  return new Promise((resolve) => {
-    let attempts = 0;
+const findLyrics = async (attempts = 0, maxAttempts = 20) => {
+  const lyricsWrapperList = document.querySelectorAll(
+    "div[data-testid='fullscreen-lyric']"
+  );
+  let lyricsList = [];
 
-    const checkLyrics = () => {
-      const lyricsWrapperList = document.querySelectorAll(
-        "div[data-testid='fullscreen-lyric']"
-      );
-      let lyricsList = [];
+  if (lyricsWrapperList.length > 0) {
+    lyricsWrapperList.forEach((lyricsWrapper) => {
+      const lyricDiv = lyricsWrapper.querySelector('div') || lyricsWrapper;
+      const lyric = lyricDiv.textContent.trim();
+      if (lyric) lyricsList.push(lyric);
+    });
+  }
 
-      if (lyricsWrapperList.length > 0) {
-        lyricsWrapperList.forEach((lyricsWrapper) => {
-          const lyricDiv = lyricsWrapper.querySelector('div') || lyricsWrapper;
-          const lyric = lyricDiv.textContent.trim();
-          if (lyric) lyricsList.push(lyric);
-        });
+  if (!lyricsList.length && attempts < maxAttempts) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(findLyrics(attempts + 1, maxAttempts));
+      }, 500);
+    });
+  }
 
-        if (lyricsList.length > 0) {
-          resolve(lyricsList);
-          return;
-        }
-      }
-
-      attempts++;
-      if (attempts < maxAttempts) {
-        requestAnimationFrame(checkLyrics);
-      } else {
-        resolve([]);
-      }
-    };
-
-    checkLyrics();
-  });
+  return lyricsList;
 };
-const getCurrentSongData = async () => {
-  const lyricsList = await findLyrics();
+
+const getCurrentSongMetadata = async () => {
   const coverArtImgEl = document.querySelector(
     "img[data-testid='cover-art-image']"
   );
@@ -171,9 +164,6 @@ const getCurrentSongData = async () => {
   );
   const artistsEl = document.querySelector(
     "div[data-testid='context-item-info-subtitles']"
-  );
-  const { selectedLanguage } = await chrome.storage.local.get(
-    'selectedLanguage'
   );
 
   const coverArtImgSrc = coverArtImgEl ? coverArtImgEl.src : null;
@@ -190,24 +180,49 @@ const getCurrentSongData = async () => {
       },
     });
   }
+};
 
+const handleLyricsUpdate = async (lyrics, lang) => {
+  const lyricsList = lyrics ? lyrics : await findLyrics();
   if (!lyricsList.length) return;
-  if (JSON.stringify(lastLyrics) == JSON.stringify(lyricsList)) {
+
+  if (JSON.stringify(lastLyrics) == JSON.stringify(lyricsList) && !lang) {
     if (previouslyTranslatedLyrics) {
       updateLyricsContainer(previouslyTranslatedLyrics);
       return;
     }
   }
+  let selectedLanguage;
+  if (!lang) {
+    try {
+      ({ selectedLanguage } = await chrome.storage.local.get(
+        'selectedLanguage'
+      ));
+    } catch (error) {
+      selectedLanguage = 'en';
+    }
+  }
 
   lastLyrics = lyricsList;
-  await translateLyrics(lyricsList, selectedLanguage || 'en');
+  await translateLyrics(lyricsList, lang || selectedLanguage || 'en');
 };
 
-const observeLyrics = (nowPlaying) => {
+const setupNowPlayingListener = (nowPlaying) => {
   removeTranslatedLyrics();
+
+  const initialLyricsCheck = async () => {
+    const lyricsList = await findLyrics();
+    if (lyricsList.length) {
+      handleLyricsUpdate(lyricsList);
+    }
+  };
+
+  initialLyricsCheck();
+
   const observer = new MutationObserver((mutations) => {
-    mutations.forEach(() => {
-      getCurrentSongData();
+    mutations.forEach((mutation) => {
+      getCurrentSongMetadata();
+      handleLyricsUpdate();
     });
   });
 
@@ -227,15 +242,22 @@ const initProcess = setInterval(() => {
   );
   if (nowPlaying) {
     clearInterval(initProcess);
-    observeLyrics(nowPlaying);
+
+    setupNowPlayingListener(nowPlaying);
   }
 }, 500);
 
+setTimeout(() => {
+  clearInterval(initProcess);
+  console.log('Timed out');
+}, MAX_INIT_TIME);
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'triggerObservation') {
-    getCurrentSongData();
+    getCurrentSongMetadata();
+    handleLyricsUpdate();
   }
   if (message.type === 'languageChange') {
-    translateLyrics(lastLyrics, message.newValue || 'en');
+    handleLyricsUpdate(null, message.newValue || 'en');
   }
 });

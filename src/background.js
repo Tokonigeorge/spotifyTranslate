@@ -24,6 +24,7 @@ chrome.runtime.onConnect.addListener((port) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'songDataUpdate') {
     currentSongData = request?.songData;
+    console.log('currentsongdata', currentSongData);
     if (popupPort) {
       popupPort.postMessage({
         type: 'lyricsUpdate',

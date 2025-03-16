@@ -14,13 +14,7 @@
       <div id="main-container">
         <div class="language-selector">
           <label for="language">Translate to:</label>
-          <select
-            id="language"
-            size="1"
-            onfocus="this.size=10;"
-            onblur="this.size=1;"
-            onchange="this.size=1; this.blur();"
-          >
+          <select id="language">
             <option value="en">English</option>
             <option value="es">Spanish</option>
             <option value="fr">French</option>
@@ -81,9 +75,7 @@
         </div>
       </div>
     </div>
-    <!-- onfocus="this.size=10;"
-            onblur="this.size=10;"
-            onchange="this.size=10; this.blur();" -->
+
     <script src="popup.js" type="module"></script>
   </body>
 </html>

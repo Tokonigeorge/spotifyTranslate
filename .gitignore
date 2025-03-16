@@ -2,3 +2,4 @@
 .server
 .env
 .zip
+.DS_Store

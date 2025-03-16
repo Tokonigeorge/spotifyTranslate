@@ -3,14 +3,16 @@
   "name": "Spotify Lyrics Translator",
   "version": "1.0.0",
   "description": "Translates lyrics of currently playing Spotify tracks into multiple languages",
-  "permissions": ["identity", "storage", "activeTab", "tabs", "scripting"],
+  "permissions": ["storage", "activeTab", "tabs"],
   "host_permissions": ["https://open.spotify.com/*"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "assets/translate.png",
-      "24": "assets/translate.png",
-      "32": "assets/translate.png"
+      "16": "assets/translate-16.png",
+      "24": "assets/translate-24.png",
+      "32": "assets/translate-32.png",
+      "64": "assets/translate-64.png",
+      "128": "assets/translate-128.png"
     }
   },
   "content_scripts": [
@@ -31,8 +33,10 @@
     "type": "module"
   },
   "icons": {
-    "16": "assets/translate.png",
-    "24": "assets/translate.png",
-    "32": "assets/translate.png"
+    "16": "assets/translate-16.png",
+    "24": "assets/translate-24.png",
+    "32": "assets/translate-32.png",
+    "64": "assets/translate-64.png",
+    "128": "assets/translate-128.png"
   }
 }
