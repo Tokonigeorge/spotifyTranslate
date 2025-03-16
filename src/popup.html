@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Spotify Lyrics Translator</title>
+    <link rel="stylesheet" href="styles/popup.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="extension-name">
+        <h2>SpotifyTranslate</h2>
+        <hr />
+      </div>
+      <div id="main-container">
+        <div class="language-selector">
+          <label for="language">Translate to:</label>
+          <select id="language">
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="it">Italian</option>
+            <option value="pt">Portuguese</option>
+            <option value="ru">Russian</option>
+            <option value="ja">Japanese</option>
+            <option value="ko">Korean</option>
+            <option value="zh">Chinese</option>
+            <option value="hi">Hindi</option>
+            <option value="ar">Arabic</option>
+            <option value="bn">Bengali</option>
+            <option value="tr">Turkish</option>
+            <option value="pa">Punjabi</option>
+            <option value="vi">Vietnamese</option>
+            <option value="pl">Polish</option>
+            <option value="ro">Romanian</option>
+            <option value="th">Thai</option>
+            <option value="ms">Malay</option>
+            <option value="sv">Swedish</option>
+            <option value="uk">Ukrainian</option>
+            <option value="he">Hebrew</option>
+            <option value="ta">Tamil</option>
+            <option value="ml">Malayalam</option>
+            <option value="el">Greek</option>
+            <option value="cs">Czech</option>
+            <option value="hu">Hungarian</option>
+            <option value="sk">Slovak</option>
+            <option value="fi">Finnish</option>
+            <option value="no">Norwegian</option>
+            <option value="da">Danish</option>
+            <option value="sr">Serbian</option>
+            <option value="hr">Croatian</option>
+            <option value="bg">Bulgarian</option>
+            <option value="lt">Lithuanian</option>
+            <option value="lv">Latvian</option>
+            <option value="et">Estonian</option>
+            <option value="sw">Swahili</option>
+            <option value="my">Burmese</option>
+            <option value="km">Khmer</option>
+            <option value="si">Sinhalese</option>
+            <option value="ne">Nepali</option>
+          </select>
+        </div>
+        <div class="now-playing" style="display: none">
+          <p>Currently Playing:</p>
+          <div class="now-playing-content">
+            <div>
+              <img src="" class="cover-art" width="60px" height="40px" />
+            </div>
+
+            <div>
+              <p class="song-title"></p>
+              <p class="artists-name"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>

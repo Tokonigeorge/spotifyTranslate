@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-color: #f4f2f2;
+}
+
+body {
+  box-sizing: border-box;
+  background-color: var(--bg-color);
+  width: 350px;
+  /* min-height: 207px; */
+  /* padding: 16px; */
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  /* gap: 16px; */
+  color: '#1C1C1C';
+  /* background-color: var(--bg-color); */
+}
+
+.extension-name h2 {
+  font-size: 12px;
+  font-weight: 600;
+  padding-left: 16px;
+}
+
+hr {
+  background-color: red;
+}
+
+#main-container {
+  padding: 0 16px 24px 16px;
+}
+
+#no-track-view {
+  text-align: center;
+}
+
+#no-track-view h3 {
+  font-size: 24px;
+  line-height: 20px;
+  /* text-align: center; */
+}
+
+#no-track-view p {
+  margin-top: -16px;
+  font-size: 12px;
+  /* text-align: left; */
+}
+
+#no-track-view button,
+.error-container button {
+  background-color: #1c1c1c;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #fffdfd;
+  border: none;
+  font-family: 'Montserrat', sans-serif;
+  box-shadow: rgba(0, 0, 0, 0.4) 0 2px 10px;
+  cursor: pointer;
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.error-container p {
+  margin-top: 0px;
+  font-size: 12px;
+  /* text-align: left; */
+}
+
+label,
+.now-playing > p:first-child {
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.language-selector {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0 0 0;
+}
+
+#language {
+  border: 1px solid rgba(130, 71, 233, 0.5);
+  background-color: rgba(130, 71, 233, 0.15);
+  outline: none;
+  width: 120px;
+  padding: 4px;
+  margin-top: 8px;
+  border-radius: 4px;
+}
+
+/* .now-playing-content > div:first-of-type {
+  border-radius: 4px;
+} */
+
+.now-playing {
+  padding-top: 8px;
+}
+
+.now-playing-content {
+  display: flex;
+  align-items: center;
+  margin-top: -12px;
+  column-gap: 8px;
+}
+
+.now-playing-content p {
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 12px;
+}
+
+.now-playing-content p:nth-child(2) {
+  color: #3a3939;
+  margin-top: -8px;
+}
+
+.now-playing-content img {
+  object-fit: cover;
+  border-radius: 4px;
+}
